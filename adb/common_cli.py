@@ -26,7 +26,6 @@ import logging
 import re
 import sys
 import types
-from future.builtins import range
 
 from adb import usb_exceptions
 
@@ -145,10 +144,8 @@ def _RunMethod(dev, args, extra):
 def StartCli(args, adb_commands, extra=None, **device_kwargs):
   """Starts a common CLI interface for this usb path and protocol."""
   try:
-
-    dev = adb_commands()
+    dev =  adb_commands()
     dev.ConnectDevice(port_path=args.port_path, serial=args.serial, default_timeout_ms=args.timeout_ms, **device_kwargs)
-
   except usb_exceptions.DeviceNotFoundError as e:
     print('No device found: {}'.format(e), file=sys.stderr)
     return 1
