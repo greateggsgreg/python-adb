@@ -116,6 +116,15 @@ class AdbTest(BaseAdbTest):
     self.assertEqual(b''.join(responses).decode('utf8'),
                      adb_commands.Shell(command))
 
+  def testUninstall(self):
+    package_name = "com.test.package"
+    response = 'Success'
+
+    usb = self._ExpectCommand(b'shell', ('pm uninstall "%s"' % package_name).encode('utf8'), response)
+
+    adb_commands = self._Connect(usb)
+    self.assertEquals(response, adb_commands.Uninstall(package_name))
+
   def testStreamingResponseShell(self):
     command = b'keepin it real big'
     # expect multiple lines
@@ -151,6 +160,15 @@ class AdbTest(BaseAdbTest):
     adb_commands = self._Connect(usb)
     adb_commands.Root()
 
+  def testEnableVerity(self):
+    usb = self._ExpectCommand(b'enable-verity', b'', b'')
+    adb_commands = self._Connect(usb)
+    adb_commands.EnableVerity()
+
+  def testDisableVerity(self):
+    usb = self._ExpectCommand(b'disable-verity', b'', b'')
+    adb_commands = self._Connect(usb)
+    adb_commands.DisableVerity()
 
 class FilesyncAdbTest(BaseAdbTest):
 
