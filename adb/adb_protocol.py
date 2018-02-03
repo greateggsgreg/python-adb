@@ -451,93 +451,107 @@ class AdbMessage(object):
     if isinstance(delimiter, str):
       delimiter = delimiter.encode('utf-8')
 
-      stdout = ''
-      stdout_stream = BytesIO()
-      original_command = ''
+    # Delimiter may be shell@hammerhead:/ $
+    # The user or directory could change, making the delimiter somthing like root@hammerhead:/data/local/tmp $
+    # Handle a partial delimiter to search on and clean up
+    if delimiter:
+      user_pos = delimiter.find(b'@')
+      dir_pos = delimiter.rfind(b':/')
+      if user_pos != -1 and dir_pos != -1:
+        partial_delimiter = delimiter[user_pos:dir_pos+1] # e.g. @hammerhead:
+      else:
+        partial_delimiter = delimiter
+    else:
+      partial_delimiter = None
 
-      try:
+    stdout = ''
+    stdout_stream = BytesIO()
+    original_command = ''
 
-        if command:
-            original_command = str(command)
-            command += '\r'  # Required. Send a carriage return right after the command
-            command = command.encode('utf8')
+    try:
 
-            # Send the command raw
-            bytes_written = connection.Write(command)
+      if command:
+        original_command = str(command)
+        command += '\r'  # Required. Send a carriage return right after the command
+        command = command.encode('utf8')
 
-            if delimiter:
-              # Expect multiple WRTE commands until the delimiter (usually terminal prompt) is detected
+        # Send the command raw
+        bytes_written = connection.Write(command)
 
-              data = b''
-              while delimiter not in data:
+        if delimiter:
+          # Expect multiple WRTE commands until the delimiter (usually terminal prompt) is detected
 
-                cmd, data = connection.ReadUntil(b'WRTE')
-                stdout_stream.write(data)
+          data = b''
+          while partial_delimiter not in data:
 
-            else:
-              # Otherwise, expect only a single WRTE
-              cmd, data = connection.ReadUntil(b'WRTE')
-
-              # WRTE command from device will follow with stdout data
-              stdout_stream.write(data)
+            cmd, data = connection.ReadUntil(b'WRTE')
+            stdout_stream.write(data)
 
         else:
-
-          # No command provided means we should just expect a single line from the terminal. Use this sparingly
+          # Otherwise, expect only a single WRTE
           cmd, data = connection.ReadUntil(b'WRTE')
-          if cmd == b'WRTE':
-              # WRTE command from device will follow with stdout data
-              stdout_stream.write(data)
-          else:
-              print("Unhandled command: {}".format(cmd))
 
-          cleaned_stdout_stream = BytesIO()
-          if clean_stdout:
-            stdout_bytes = stdout_stream.getvalue()
+          # WRTE command from device will follow with stdout data
+          stdout_stream.write(data)
 
-            bsruns = {} # Backspace runs tracking
-            next_start_pos = 0
-            last_run_pos, last_run_len = find_backspace_runs(stdout_bytes, next_start_pos)
+      else:
 
-            if last_run_pos != -1 and last_run_len != 0:
-              bsruns.update({last_run_pos: last_run_len})
-              cleaned_stdout_stream.write(stdout_bytes[next_start_pos:(last_run_pos-last_run_len)])
-              next_start_pos += last_run_pos + last_run_len
+        # No command provided means we should just expect a single line from the terminal. Use this sparingly
+        cmd, data = connection.ReadUntil(b'WRTE')
+        if cmd == b'WRTE':
+            # WRTE command from device will follow with stdout data
+            stdout_stream.write(data)
+        else:
+            print("Unhandled command: {}".format(cmd))
 
-            while last_run_pos != -1:
-              last_run_pos, last_run_len = find_backspace_runs(stdout_bytes[next_start_pos:], next_start_pos)
+      cleaned_stdout_stream = BytesIO()
+      if clean_stdout:
+        stdout_bytes = stdout_stream.getvalue()
 
-              if last_run_pos != -1:
-                bsruns.update({last_run_pos: last_run_len})
-                cleaned_stdout_stream.write(stdout_bytes[next_start_pos:(last_run_pos - last_run_len)])
-                next_start_pos += last_run_pos + last_run_len
+        bsruns = {} # Backspace runs tracking
+        next_start_pos = 0
+        last_run_pos, last_run_len = find_backspace_runs(stdout_bytes, next_start_pos)
 
-            cleaned_stdout_stream.write(stdout_bytes[next_start_pos:])
+        if last_run_pos != -1 and last_run_len != 0:
+          bsruns.update({last_run_pos: last_run_len})
+          cleaned_stdout_stream.write(stdout_bytes[next_start_pos:(last_run_pos-last_run_len)])
+          next_start_pos += last_run_pos + last_run_len
 
-          else:
-            cleaned_stdout_stream.write(stdout_stream.getvalue())
+        while last_run_pos != -1:
+          last_run_pos, last_run_len = find_backspace_runs(stdout_bytes[next_start_pos:], next_start_pos)
 
-          stdout = cleaned_stdout_stream.getvalue()
+          if last_run_pos != -1:
+            bsruns.update({last_run_pos: last_run_len})
+            cleaned_stdout_stream.write(stdout_bytes[next_start_pos:(last_run_pos - last_run_len)])
+            next_start_pos += last_run_pos + last_run_len
 
-          # Strip original command that will come back in stdout
-          if original_command and strip_command:
-            findstr = original_command.encode('utf-8') + b'\r\r\n'
+        cleaned_stdout_stream.write(stdout_bytes[next_start_pos:])
+
+      else:
+        cleaned_stdout_stream.write(stdout_stream.getvalue())
+
+      stdout = cleaned_stdout_stream.getvalue()
+
+      # Strip original command that will come back in stdout
+      if original_command and strip_command:
+        findstr = original_command.encode('utf-8') + b'\r\r\n'
+        pos = stdout.find(findstr)
+        while pos >= 0:
+            stdout = stdout.replace(findstr, b'')
             pos = stdout.find(findstr)
-            while pos >= 0:
-                stdout = stdout.replace(findstr, b'')
-                pos = stdout.find(findstr)
 
-            if b'\r\r\n' in stdout:
-              stdout = stdout.split(b'\r\r\n')[1]
+        if b'\r\r\n' in stdout:
+          stdout = stdout.split(b'\r\r\n')[1]
 
-          # Strip delimiter if requested
-          if delimiter and strip_delimiter:
+      # Strip delimiter if requested
+      # TODO: Handling stripping partial delimiters here
+      if delimiter and strip_delimiter:
 
-            stdout = stdout.replace(delimiter, b'')
+        stdout = stdout.replace(delimiter, b'')
 
-          stdout = stdout.rstrip()
+      stdout = stdout.rstrip()
 
-      except Exception as e:
-          print("InteractiveShell exception (most likely timeout): {}".format(e))
+    except Exception as e:
+        print("InteractiveShell exception (most likely timeout): {}".format(e))
 
-      return stdout
+    return stdout

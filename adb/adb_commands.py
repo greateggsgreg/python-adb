@@ -364,5 +364,4 @@ class AdbCommands(object):
     """
     conn = self._get_service_connection(b'shell:')
 
-    return self.protocol_handler.InteractiveShellCommand(conn, command=command, strip_command=strip_command,
-                                                    delimiter=delimiter, strip_delimiter=strip_delimiter)
+    return self.protocol_handler.InteractiveShellCommand(conn, command=command, strip_command=strip_command, delimiter=delimiter, strip_delimiter=strip_delimiter)
