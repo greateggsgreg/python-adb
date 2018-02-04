@@ -120,6 +120,9 @@ class AdbCommands(object):
               DeviceIsAvailable, port_path=port_path, serial=serial,
               timeout_ms=default_timeout_ms)
 
+    else:
+      self.handle = kwargs.pop('handle')
+
     self.__Connect(**kwargs)
 
     return self
@@ -135,11 +138,10 @@ class AdbCommands(object):
     self.handle.Close()
     self.__reset()
 
-  def __Connect(self, handle=None, banner=None, **kwargs):
+  def __Connect(self, banner=None, **kwargs):
     """Connect to the device.
 
     Args:
-      handle: UsbHandle or TcpHandle instance to use (usually self.handle)
       banner: See protocol_handler.Connect.
       **kwargs: See protocol_handler.Connect for kwargs. Includes rsa_keys,
           and auth_timeout_ms.
@@ -147,13 +149,10 @@ class AdbCommands(object):
       An instance of this class if the device connected successfully.
     """
 
-    if not handle:
-      handle = self.handle
-
     if not banner:
       banner = socket.gethostname().encode()
 
-    conn_str = self.protocol_handler.Connect(handle, banner=banner, **kwargs)
+    conn_str = self.protocol_handler.Connect(self.handle, banner=banner, **kwargs)
 
     # Remove banner and colons after device state (state::banner)
     parts = conn_str.split(b'::')
