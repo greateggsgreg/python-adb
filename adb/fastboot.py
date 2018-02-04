@@ -206,30 +206,38 @@ class FastbootProtocol(object):
 class FastbootCommands(object):
   """Encapsulates the fastboot commands."""
 
-  def __init__(self, usb, chunk_kb=1024):
+  def __init__(self):
     """Constructs a FastbootCommands instance.
 
     Args:
       usb: UsbHandle instance.
     """
-    self._usb = usb
-    self._protocol = FastbootProtocol(usb, chunk_kb)
+    self.__reset()
+
+  def __reset(self):
+    self._handle = None
+    self._protocol = None
 
   @property
   def usb_handle(self):
-    return self._usb
+    return self._handle
 
   def Close(self):
-    self._usb.Close()
+    self._handle.Close()
 
-  @classmethod
-  def ConnectDevice(
-      cls, port_path=None, serial=None, default_timeout_ms=None, chunk_kb=1024):
+  def ConnectDevice(self, port_path=None, serial=None, default_timeout_ms=None, chunk_kb=1024, **kwargs):
     """Convenience function to get an adb device from usb path or serial."""
-    usb = common.UsbHandle.FindAndOpen(
-        DeviceIsAvailable, port_path=port_path, serial=serial,
-        timeout_ms=default_timeout_ms)
-    return cls(usb, chunk_kb=chunk_kb)
+
+    if not kwargs.get('handle', None):
+      self._handle = common.UsbHandle.FindAndOpen(
+          DeviceIsAvailable, port_path=port_path, serial=serial,
+          timeout_ms=default_timeout_ms)
+    else:
+      self._handle = kwargs['handle']
+
+    self._protocol = FastbootProtocol(self._handle, chunk_kb)
+
+    return self
 
   @classmethod
   def Devices(cls):
@@ -285,15 +293,16 @@ class FastbootCommands(object):
       source_len = os.stat(source_file).st_size
       source_file = open(source_file)
 
-    if source_len == 0:
-      # Fall back to storing it all in memory :(
-      data = source_file.read()
-      source_file = io.BytesIO(data.encode('utf8'))
-      source_len = len(data)
+    with source_file:
+      if source_len == 0:
+        # Fall back to storing it all in memory :(
+        data = source_file.read()
+        source_file = io.BytesIO(data.encode('utf8'))
+        source_len = len(data)
 
-    self._protocol.SendCommand(b'download', b'%08x' % source_len)
-    return self._protocol.HandleDataSending(
-        source_file, source_len, info_cb, progress_callback=progress_callback)
+      self._protocol.SendCommand(b'download', b'%08x' % source_len)
+      return self._protocol.HandleDataSending(
+          source_file, source_len, info_cb, progress_callback=progress_callback)
 
   def Flash(self, partition, timeout_ms=0, info_cb=DEFAULT_MESSAGE_CALLBACK):
     """Flashes the last downloaded file to the given partition.
