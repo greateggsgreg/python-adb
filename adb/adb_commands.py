@@ -348,20 +348,20 @@ class AdbCommands(object):
     """
     return self.StreamingShell('logcat %s' % options, timeout_ms)
 
-  def InteractiveShell(self, command=None, strip_command=True, delimiter=None, strip_delimiter=True):
+  def InteractiveShell(self, cmd=None, strip_cmd=True, delim=None, strip_delim=True):
     """Get stdout from the currently open interactive shell and optionally run a command
         on the device, returning all output.
 
     Args:
       command: Optional. Command to run on the target.
-      strip_command: Optional (default True). Strip command name from stdout.
-      delimiter: Optional. Delimiter to look for in the output to know when to stop expecting more output
+      strip_cmd: Optional (default True). Strip command name from stdout.
+      delim: Optional. Delimiter to look for in the output to know when to stop expecting more output
       (usually the shell prompt)
-      strip_delimiter: Optional (default True): Strip the provided delimiter from the output
+      strip_delim: Optional (default True): Strip the provided delimiter from the output
 
     Returns:
       The stdout from the shell command.
     """
     conn = self._get_service_connection(b'shell:')
 
-    return self.protocol_handler.InteractiveShellCommand(conn, command=command, strip_command=strip_command, delimiter=delimiter, strip_delimiter=strip_delimiter)
+    return self.protocol_handler.InteractiveShellCommand(conn, cmd=cmd, strip_cmd=strip_cmd, delim=delim, strip_delim=strip_delim)

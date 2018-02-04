@@ -431,78 +431,77 @@ class AdbMessage(object):
       yield data.decode('utf8')
 
   @classmethod
-  def InteractiveShellCommand(cls, connection, command=None, strip_command=True, delimiter=None, strip_delimiter=True,
-                                clean_stdout=True):
+  def InteractiveShellCommand(cls, conn, cmd=None, strip_cmd=True, delim=None, strip_delim=True, clean_stdout=True):
     """Retrieves stdout of the current InteractiveShell and sends a shell command if provided
     TODO: Should we turn this into a yield based function so we can stream all output?
 
     Args:
-      connection: Instance of AdbConnection
-      command: Optional. Command to run on the target.
-      strip_command: Optional (default True). Strip command name from stdout.
-      delimiter: Optional. Delimiter to look for in the output to know when to stop expecting more output
+      conn: Instance of AdbConnection
+      cmd: Optional. Command to run on the target.
+      strip_cmd: Optional (default True). Strip command name from stdout.
+      delim: Optional. Delimiter to look for in the output to know when to stop expecting more output
       (usually the shell prompt)
-      strip_delimiter: Optional (default True): Strip the provided delimiter from the output
+      strip_delim: Optional (default True): Strip the provided delimiter from the output
       clean_stdout: Cleanup the stdout stream of any backspaces and the characters that were deleted by the backspace
     Returns:
       The stdout from the shell command.
     """
 
-    if isinstance(delimiter, str):
-      delimiter = delimiter.encode('utf-8')
+    if isinstance(delim, str):
+      delimiter = delim.encode('utf-8')
 
     # Delimiter may be shell@hammerhead:/ $
     # The user or directory could change, making the delimiter somthing like root@hammerhead:/data/local/tmp $
     # Handle a partial delimiter to search on and clean up
-    if delimiter:
-      user_pos = delimiter.find(b'@')
-      dir_pos = delimiter.rfind(b':/')
+    if delim:
+      user_pos = delim.find(b'@')
+      dir_pos = delim.rfind(b':/')
       if user_pos != -1 and dir_pos != -1:
-        partial_delimiter = delimiter[user_pos:dir_pos+1] # e.g. @hammerhead:
+        partial_delim = delim[user_pos:dir_pos+1] # e.g. @hammerhead:
       else:
-        partial_delimiter = delimiter
+        partial_delim = delim
     else:
-      partial_delimiter = None
+      partial_delim = None
 
     stdout = ''
     stdout_stream = BytesIO()
-    original_command = ''
+    original_cmd = ''
 
     try:
 
-      if command:
-        original_command = str(command)
-        command += '\r'  # Required. Send a carriage return right after the command
-        command = command.encode('utf8')
+      if cmd:
+        original_cmd = str(cmd)
+        cmd += '\r'  # Required. Send a carriage return right after the cmd
+        cmd = cmd.encode('utf8')
 
-        # Send the command raw
-        bytes_written = connection.Write(command)
+        # Send the cmd raw
+        bytes_written = conn.Write(cmd)
 
-        if delimiter:
-          # Expect multiple WRTE commands until the delimiter (usually terminal prompt) is detected
+        if delim:
+          # Expect multiple WRTE cmds until the delim (usually terminal prompt) is detected
 
           data = b''
-          while partial_delimiter not in data:
+          while partial_delim not in data:
 
-            cmd, data = connection.ReadUntil(b'WRTE')
+            cmd, data = conn.ReadUntil(b'WRTE')
             stdout_stream.write(data)
 
         else:
           # Otherwise, expect only a single WRTE
-          cmd, data = connection.ReadUntil(b'WRTE')
+          cmd, data = conn.ReadUntil(b'WRTE')
 
-          # WRTE command from device will follow with stdout data
+          # WRTE cmd from device will follow with stdout data
           stdout_stream.write(data)
 
       else:
 
-        # No command provided means we should just expect a single line from the terminal. Use this sparingly
-        cmd, data = connection.ReadUntil(b'WRTE')
+        # No cmd provided means we should just expect a single line from the terminal. Use this sparingly
+        cmd, data = conn.ReadUntil(b'WRTE')
         if cmd == b'WRTE':
-            # WRTE command from device will follow with stdout data
+            # WRTE cmd from device will follow with stdout data
             stdout_stream.write(data)
         else:
-            print("Unhandled command: {}".format(cmd))
+            print("Unhandled cmd: {}".format(cmd))
 
       cleaned_stdout_stream = BytesIO()
       if clean_stdout:
@@ -532,9 +531,9 @@ class AdbMessage(object):
 
       stdout = cleaned_stdout_stream.getvalue()
 
-      # Strip original command that will come back in stdout
-      if original_command and strip_command:
-        findstr = original_command.encode('utf-8') + b'\r\r\n'
+      # Strip original cmd that will come back in stdout
+      if original_cmd and strip_cmd:
+        findstr = original_cmd.encode('utf-8') + b'\r\r\n'
         pos = stdout.find(findstr)
         while pos >= 0:
             stdout = stdout.replace(findstr, b'')
@@ -543,11 +542,11 @@ class AdbMessage(object):
         if b'\r\r\n' in stdout:
           stdout = stdout.split(b'\r\r\n')[1]
 
-      # Strip delimiter if requested
-      # TODO: Handling stripping partial delimiters here
-      if delimiter and strip_delimiter:
+      # Strip delim if requested
+      # TODO: Handling stripping partial delims here - not a deal breaker the way we're handling it now
+      if delim and strip_delim:
 
-        stdout = stdout.replace(delimiter, b'')
+        stdout = stdout.replace(delim, b'')
 
       stdout = stdout.rstrip()
 

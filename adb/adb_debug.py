@@ -113,7 +113,7 @@ def Shell(device, *command):
       elif cmd == 'exit':
         break
       else:
-        stdout = device.InteractiveShell(cmd, strip_command=True, delimiter=terminal_prompt, strip_delimiter=True)
+        stdout = device.InteractiveShell(cmd, strip_cmd=True, delim=terminal_prompt, strip_delim=True)
         if stdout:
           if isinstance(stdout, bytes):
             stdout = stdout.decode('utf-8')
