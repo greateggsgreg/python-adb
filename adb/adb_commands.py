@@ -135,7 +135,9 @@ class AdbCommands(object):
         except:
           pass
 
-    self.handle.Close()
+    if self.handle:
+      self.handle.Close()
+
     self.__reset()
 
   def __Connect(self, banner=None, **kwargs):
