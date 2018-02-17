@@ -6,3 +6,4 @@ adb.egg-info/
 /adb.zip
 /fastboot.zip
 .idea/
+*.DS_Store*
