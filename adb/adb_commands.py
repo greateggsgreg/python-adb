@@ -176,7 +176,7 @@ class AdbCommands(object):
   def GetState(self):
     return self._device_state
 
-  def Install(self, apk_path, destination_dir='', replace_existing=True, timeout_ms=None):
+  def Install(self, apk_path, destination_dir='', timeout_ms=None, replace_existing=True, transfer_progress_callback=None):
     """Install an apk to the device.
 
     Doesn't support verifier file, instead allows destination directory to be
@@ -188,6 +188,7 @@ class AdbCommands(object):
         persistent applications.
       replace_existing: whether to replace existing application
       timeout_ms: Expected timeout for pushing and installing.
+      transfer_progress_callback: callback method that accepts filename, bytes_written and total_bytes of APK transfer
 
     Returns:
       The pm install output.
@@ -196,15 +197,14 @@ class AdbCommands(object):
       destination_dir = '/data/local/tmp/'
     basename = os.path.basename(apk_path)
     destination_path = os.path.join(destination_dir, basename)
-    self.Push(apk_path, destination_path, timeout_ms=timeout_ms)
-
+    self.Push(apk_path, destination_path, timeout_ms=timeout_ms, progress_callback=transfer_progress_callback)
+    
     cmd = ['pm install']
     if replace_existing:
       cmd.append('-r')
     cmd.append('"{}"'.format(destination_path))
-
     return self.Shell(' '.join(cmd), timeout_ms=timeout_ms)
-
+  
   def Uninstall(self, package_name, keep_data=False, timeout_ms=None):
     """Removes a package from the device.
 
@@ -222,7 +222,7 @@ class AdbCommands(object):
     cmd.append('"%s"' % package_name)
     return self.Shell(' '.join(cmd), timeout_ms=timeout_ms)
 
-  def Push(self, source_file, device_filename, mtime='0', timeout_ms=None):
+  def Push(self, source_file, device_filename, mtime='0', timeout_ms=None, progress_callback=None):
     """Push a file or directory to the device.
 
     Args:
@@ -231,12 +231,14 @@ class AdbCommands(object):
       device_filename: Destination on the device to write to.
       mtime: Optional, modification time to set on the file.
       timeout_ms: Expected timeout for any part of the push.
+      progress_callback: callback method that accepts filename, bytes_written and total_bytes,
+                         total_bytes will be -1 for file-like objects
     """
     if isinstance(source_file, str):
       if os.path.isdir(source_file):
         self.Shell("mkdir " + device_filename)
         for f in os.listdir(source_file):
-          self.Push(os.path.join(source_file, f), device_filename + '/' + f)
+          self.Push(os.path.join(source_file, f), device_filename + '/' + f, progress_callback=progress_callback)
         return
       source_file = open(source_file, "rb")
 
@@ -244,10 +246,10 @@ class AdbCommands(object):
       connection = self.protocol_handler.Open(
         self.handle, destination=b'sync:', timeout_ms=timeout_ms)
       self.filesync_handler.Push(connection, source_file, device_filename,
-                               mtime=int(mtime))
+                               mtime=int(mtime), progress_callback=progress_callback)
     connection.Close()
 
-  def Pull(self, device_filename, dest_file=None, timeout_ms=None):
+  def Pull(self, device_filename, dest_file=None, timeout_ms=None, progress_callback=None,):
     """Pull a file from the device.
 
     Args:
@@ -267,9 +269,9 @@ class AdbCommands(object):
 
     #conn = self._get_service_connection(b'sync:')
     conn = self.protocol_handler.Open(
-        self.handle, destination=b'sync:')
+        self.handle, destination=b'sync:', timeout_ms=timeout_ms)
 
-    self.filesync_handler.Pull(conn, device_filename, dest_file)
+    self.filesync_handler.Pull(conn, device_filename, dest_file, timeout_ms, progress_callback)
 
     conn.Close()
     if isinstance(dest_file, io.BytesIO):
