@@ -249,7 +249,7 @@ class AdbCommands(object):
                                mtime=int(mtime), progress_callback=progress_callback)
     connection.Close()
 
-  def Pull(self, device_filename, dest_file=None, timeout_ms=None, progress_callback=None,):
+  def Pull(self, device_filename, dest_file=None, timeout_ms=None, progress_callback=None):
     """Pull a file from the device.
 
     Args:
