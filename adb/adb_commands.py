@@ -271,7 +271,7 @@ class AdbCommands(object):
     conn = self.protocol_handler.Open(
         self.handle, destination=b'sync:', timeout_ms=timeout_ms)
 
-    self.filesync_handler.Pull(conn, device_filename, dest_file, timeout_ms, progress_callback)
+    self.filesync_handler.Pull(conn, device_filename, dest_file, progress_callback)
 
     conn.Close()
     if isinstance(dest_file, io.BytesIO):
