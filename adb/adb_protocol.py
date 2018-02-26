@@ -370,8 +370,12 @@ class AdbMessage(object):
       raise InvalidResponseError(
           'Expected the local_id to be {}, got {}'.format(local_id, their_local_id))
     if cmd == b'CLSE':
+      # Some devices seem to be sending CLSE once more after a request, this *should* handle it
+      cmd, remote_id, their_local_id, _ = cls.Read(usb, [b'CLSE', b'OKAY'],
+                                                   timeout_ms=timeout_ms)
       # Device doesn't support this service.
-      return None
+      if cmd == b'CLSE':
+        return None
     if cmd != b'OKAY':
       raise InvalidCommandError('Expected a ready response, got {}'.format(cmd),
                                 cmd, (remote_id, their_local_id))
