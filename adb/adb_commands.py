@@ -64,11 +64,10 @@ class AdbCommands(object):
     self._handle = None
     self._device_state = None
 
-    # Connection table tracks each open AdbConnection objects per service type
-    # By default, the only service connections that make sense to hold open is (interactive) shell
-    self._service_connections = {
-        b'shell:': None
-    }
+    # Connection table tracks each open AdbConnection objects per service type for program functions
+    # that choose to persist an AdbConnection object for their functionality, using
+    # self._get_service_connection
+    self._service_connections = {}
 
   def _get_service_connection(self, service, service_command=None, create=True, timeout_ms=None):
     """
