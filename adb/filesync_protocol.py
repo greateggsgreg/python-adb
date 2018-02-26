@@ -212,10 +212,7 @@ class FileSyncConnection(object):
       if command_id == b'FAIL':
         reason = ''
         if self.recv_buffer:
-            try:
-                reason = self.recv_buffer.decode('utf-8')
-            except:
-                pass
+          reason = self.recv_buffer.decode('utf-8', errors='ignore')
         raise usb_exceptions.AdbCommandFailureException('Command failed: {}'.format(reason))
       raise adb_protocol.InvalidResponseError(
           'Expected one of %s, got %s' % (expected_ids, command_id))
