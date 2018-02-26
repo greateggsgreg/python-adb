@@ -251,12 +251,13 @@ class FastbootCommands(object):
     used instead of a USB connection.
     """
 
-    if not kwargs.get('handle', None):
+    if 'handle' in kwargs:
+      self._handle = kwargs['handle']
+
+    else:
       self._handle = common.UsbHandle.FindAndOpen(
           DeviceIsAvailable, port_path=port_path, serial=serial,
           timeout_ms=default_timeout_ms)
-    else:
-      self._handle = kwargs['handle']
 
     self._protocol = FastbootProtocol(self._handle, chunk_kb)
 
