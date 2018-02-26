@@ -114,7 +114,11 @@ def main():
         bar.finish()
     kwargs['progress_callback'] = SetProgress
 
-  return common_cli.StartCli(args, fastboot.FastbootCommands, extra=kwargs)
+  return common_cli.StartCli(
+      args,
+      fastboot.FastbootCommands,
+      chunk_kb=args.chunk_kb,
+      extra=kwargs)
 
 
 if __name__ == '__main__':

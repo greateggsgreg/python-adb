@@ -226,7 +226,30 @@ class FastbootCommands(object):
     self._handle.Close()
 
   def ConnectDevice(self, port_path=None, serial=None, default_timeout_ms=None, chunk_kb=1024, **kwargs):
-    """Convenience function to get an adb device from usb path or serial."""
+    """Convenience function to get an adb device from usb path or serial.
+
+    Args:
+      port_path: The filename of usb port to use.
+      serial: The serial number of the device to use.
+      default_timeout_ms: The default timeout in milliseconds to use.
+      chunk_kb: Amount of data, in kilobytes, to break fastboot packets up into
+      kwargs: handle: Device handle to use (instance of common.TcpHandle or common.UsbHandle)
+              banner: Connection banner to pass to the remote device
+              rsa_keys: List of AuthSigner subclass instances to be used for
+                  authentication. The device can either accept one of these via the Sign
+                  method, or we will send the result of GetPublicKey from the first one
+                  if the device doesn't accept any of them.
+              auth_timeout_ms: Timeout to wait for when sending a new public key. This
+                  is only relevant when we send a new public key. The device shows a
+                  dialog and this timeout is how long to wait for that dialog. If used
+                  in automation, this should be low to catch such a case as a failure
+                  quickly; while in interactive settings it should be high to allow
+                  users to accept the dialog. We default to automation here, so it's low
+                  by default.
+
+    If serial specifies a TCP address:port, then a TCP connection is
+    used instead of a USB connection.
+    """
 
     if not kwargs.get('handle', None):
       self._handle = common.UsbHandle.FindAndOpen(
