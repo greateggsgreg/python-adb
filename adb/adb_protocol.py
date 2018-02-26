@@ -20,7 +20,6 @@ host side.
 import struct
 import time
 from io import BytesIO
-from future.utils import iteritems
 from adb import usb_exceptions
 
 # Maximum amount of data in an ADB packet.
@@ -78,7 +77,7 @@ def MakeWireIDs(ids):
       cmd_id: sum(c << (i * 8) for i, c in enumerate(bytearray(cmd_id)))
       for cmd_id in ids
   }
-  wire_to_id = {wire: cmd_id for cmd_id, wire in iteritems(id_to_wire)}
+  wire_to_id = {wire: cmd_id for cmd_id, wire in id_to_wire.items()}
   return id_to_wire, wire_to_id
 
 
