@@ -19,6 +19,7 @@ StartCli handles connecting to a device, calling the expected method, and
 outputting the results.
 """
 
+from __future__ import print_function
 import argparse
 import io
 import inspect
