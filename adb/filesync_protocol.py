@@ -187,7 +187,7 @@ class FileSyncConnection(object):
       size: Optionally override size from len(data).
     """
     if data:
-      if isinstance(data, str):
+      if not isinstance(data, bytes):
         data = data.encode('utf8')
       size = len(data)
 
