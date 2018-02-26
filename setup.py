@@ -61,7 +61,6 @@ Android project's ADB.
     keywords = ['android', 'adb', 'fastboot'],
 
     install_requires = [
-        'future',
         'libusb1>=1.0.16',
         rsa_signer_library
     ],
