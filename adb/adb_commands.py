@@ -264,6 +264,8 @@ class AdbCommands(object):
       device_filename: Filename on the device to pull.
       dest_file: If set, a filename or writable file-like object.
       timeout_ms: Expected timeout for any part of the pull.
+      progress_callback: callback method that accepts filename, bytes_written and total_bytes,
+                         total_bytes will be -1 for file-like objects
 
     Returns:
       The file data if dest_file is not set. Otherwise, True if the destination file exists

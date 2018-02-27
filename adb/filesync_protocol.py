@@ -95,7 +95,12 @@ class FilesyncProtocol(object):
 
   @classmethod
   def _HandleProgress(cls, progress_callback):
-    """Calls the callback with the current progress and total ."""
+    """Calls the callback with the current progress and total bytes written/received.
+
+    Args:
+      progress_callback: callback method that accepts filename, bytes_written and total_bytes,
+                 total_bytes will be -1 for file-like objects
+    """
     current = 0
     while True:
       current += yield
@@ -115,7 +120,7 @@ class FilesyncProtocol(object):
       filename: Filename to push to
       st_mode: stat mode for filename
       mtime: modification time
-      progress_callback: callback method that accepts filename, bytes_written and total_bytes,
+      progress_callback: callback method that accepts filename, bytes_written and total_bytes
 
     Raises:
       PushFailedError: Raised on push failure.
