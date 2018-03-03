@@ -100,7 +100,8 @@ class AdbCommands(object):
     return connection
 
   def ConnectDevice(self, port_path=None, serial=None, default_timeout_ms=None, **kwargs):
-    """Convenience function to get an adb device from usb path or serial.
+    """Convenience function to setup a transport handle for the adb device from 
+         usb path or serial then connect to it.
 
     Args:
       port_path: The filename of usb port to use.
@@ -134,7 +135,7 @@ class AdbCommands(object):
             DeviceIsAvailable, port_path=port_path, serial=serial,
             timeout_ms=default_timeout_ms)
 
-    self.__Connect(**kwargs)
+    self._Connect(**kwargs)
 
     return self
 
@@ -151,13 +152,13 @@ class AdbCommands(object):
 
     self.__reset()
 
-  def __Connect(self, banner=None, **kwargs):
+  def _Connect(self, banner=None, **kwargs):
     """Connect to the device.
 
     Args:
       banner: See protocol_handler.Connect.
-      **kwargs: See protocol_handler.Connect for kwargs. Includes rsa_keys,
-          and auth_timeout_ms.
+      **kwargs: See protocol_handler.Connect and adb_commands.ConnectDevice for kwargs.
+           Includes handle, rsa_keys, and auth_timeout_ms.
     Returns:
       An instance of this class if the device connected successfully.
     """
