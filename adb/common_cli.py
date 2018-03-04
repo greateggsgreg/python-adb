@@ -65,6 +65,7 @@ def GetCommonArguments():
 
 def _DocToArgs(doc):
     """Converts a docstring documenting arguments into a dict."""
+    m = None
     offset = None
     in_arg = False
     out = {}
