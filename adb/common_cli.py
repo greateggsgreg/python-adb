@@ -77,7 +77,7 @@ def _DocToArgs(doc):
             if offset is None:
                 offset = len(l) - len(l.lstrip())
             l = l[offset:]
-            if l[0] == ' ':
+            if l[0] == ' ' and m:
                 out[m.group(1)] += ' ' + l.lstrip()
             else:
                 m = re.match(r'^([a-z_]+): (.+)$', l.strip())

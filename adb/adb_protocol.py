@@ -426,7 +426,7 @@ class AdbMessage(object):
         Yields:
           The responses from the service.
         """
-        if isinstance(command, str):
+        if not isinstance(command, bytes):
             command = command.encode('utf8')
         connection = cls.Open(
             usb, destination=b'%s:%s' % (service, command),
@@ -451,7 +451,7 @@ class AdbMessage(object):
           The stdout from the shell command.
         """
 
-        if isinstance(delim, str):
+        if not isinstance(delim, bytes):
             delim = delim.encode('utf-8')
 
         # Delimiter may be shell@hammerhead:/ $

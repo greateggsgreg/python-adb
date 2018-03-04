@@ -13,14 +13,12 @@
 # limitations under the License.
 """A libusb1-based fastboot implementation."""
 
-import argparse
 import binascii
 import collections
 import io
 import logging
 import os
 import struct
-import sys
 
 from adb import common
 from adb import usb_exceptions
@@ -198,7 +196,7 @@ class FastbootProtocol(object):
             length -= len(tmp)
             self.usb.BulkWrite(tmp)
 
-            if progress_callback:
+            if progress_callback and progress:
                 progress.send(len(tmp))
 
 
