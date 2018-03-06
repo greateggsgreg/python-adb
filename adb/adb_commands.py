@@ -195,8 +195,8 @@ class AdbCommands(object):
           apk_path: Local path to apk to install.
           destination_dir: Optional destination directory. Use /system/app/ for
             persistent applications.
-          grant_permissions: If True, grant all permissions to the app specified in its manifest
           replace_existing: whether to replace existing application
+          grant_permissions: If True, grant all permissions to the app specified in its manifest
           timeout_ms: Expected timeout for pushing and installing.
           transfer_progress_callback: callback method that accepts filename, bytes_written and total_bytes of APK transfer
 
