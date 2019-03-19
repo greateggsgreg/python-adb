@@ -256,9 +256,9 @@ class AdbCommands(object):
           device_filename: Destination on the device to write to.
           mtime: Optional, modification time to set on the file.
           timeout_ms: Expected timeout for any part of the push.
-          st_mode: stat mode for filename
           progress_callback: callback method that accepts filename, bytes_written and total_bytes,
                              total_bytes will be -1 for file-like objects
+          st_mode: stat mode for filename
         """
 
         if isinstance(source_file, str):
