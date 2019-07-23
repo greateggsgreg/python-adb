@@ -328,6 +328,9 @@ class FastbootCommands(object):
             with open(source_file_path, 'rb') as fh:
                 source_file = BytesIO(fh.read())
 
+        elif isinstance(source_file, StringIO):
+            source_file = BytesIO(source_file.read())
+
         if not source_len:
             source_len = len(source_file)
 
