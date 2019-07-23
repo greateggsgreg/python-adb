@@ -27,6 +27,7 @@ import logging
 import re
 import sys
 import types
+import traceback
 
 from adb import usb_exceptions
 
@@ -158,7 +159,7 @@ def StartCli(args, adb_commands, extra=None, **device_kwargs):
     try:
         return _RunMethod(dev, args, extra or {})
     except Exception as e:  # pylint: disable=broad-except
-        sys.stdout.write(str(e))
+        sys.stdout.write(traceback.format_exc())
         return 1
     finally:
         dev.Close()
