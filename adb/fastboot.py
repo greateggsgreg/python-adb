@@ -19,7 +19,7 @@ import io
 import logging
 import os
 import struct
-from io import BytesIO
+from io import BytesIO, StringIO
 
 from adb import common
 from adb import usb_exceptions
@@ -100,9 +100,9 @@ class FastbootProtocol(object):
           info_cb: Optional callback for text sent from the bootloader.
 
         Returns:
-          Tuple - OKAY packet's message, List of preceding Fastboot Messages
+          OKAY packet's message
         """
-        return self._AcceptResponses(b'OKAY', info_cb, timeout_ms=timeout_ms)
+        return self._AcceptResponses(b'OKAY', info_cb, timeout_ms=timeout_ms)[0]
 
     def HandleDataSending(self, source_file, source_len,
                           info_cb=DEFAULT_MESSAGE_CALLBACK,
@@ -336,7 +336,7 @@ class FastbootCommands(object):
 
         self._protocol.SendCommand(b'download', b'%08x' % source_len)
         return self._protocol.HandleDataSending(
-            source_file, source_len, info_cb, progress_callback=progress_callback)
+            source_file, source_len, info_cb, progress_callback=progress_callback)[0]
 
     def Flash(self, partition, timeout_ms=0, info_cb=DEFAULT_MESSAGE_CALLBACK):
         """Flashes the last downloaded file to the given partition.
