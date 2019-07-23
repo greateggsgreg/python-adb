@@ -19,6 +19,7 @@ import io
 import logging
 import os
 import struct
+from io import BytesIO
 
 from adb import common
 from adb import usb_exceptions
@@ -99,7 +100,7 @@ class FastbootProtocol(object):
           info_cb: Optional callback for text sent from the bootloader.
 
         Returns:
-          OKAY packet's message.
+          Tuple - OKAY packet's message, List of preceding Fastboot Messages
         """
         return self._AcceptResponses(b'OKAY', info_cb, timeout_ms=timeout_ms)
 
@@ -123,9 +124,9 @@ class FastbootProtocol(object):
           FastbootInvalidResponse: Fastboot responded with an unknown packet type.
 
         Returns:
-          OKAY packet's message.
+          Tuple - OKAY packet's message, List of preceding Fastboot Messages
         """
-        accepted_size = self._AcceptResponses(
+        accepted_size, _msgs = self._AcceptResponses(
             b'DATA', info_cb, timeout_ms=timeout_ms)
 
         accepted_size = binascii.unhexlify(accepted_size[:8])
@@ -151,24 +152,33 @@ class FastbootProtocol(object):
           FastbootInvalidResponse: Fastboot responded with an unknown packet type.
 
         Returns:
-          OKAY packet's message.
+          Tuple - OKAY packet's message, List of preceding Fastboot Messages
         """
+
+        messages = []
+
         while True:
             response = self.usb.BulkRead(64, timeout_ms=timeout_ms)
             header = bytes(response[:4])
             remaining = bytes(response[4:])
 
             if header == b'INFO':
-                info_cb(FastbootMessage(remaining, header))
+                fbm = FastbootMessage(remaining, header)
+                messages.append(fbm)
+                info_cb(fbm)
             elif header in self.FINAL_HEADERS:
                 if header != expected_header:
                     raise FastbootStateMismatch(
                         'Expected %s, got %s', expected_header, header)
                 if header == b'OKAY':
-                    info_cb(FastbootMessage(remaining, header))
-                return remaining
+                    fbm = FastbootMessage(remaining, header)
+                    messages.append(fbm)
+                    info_cb(fbm)
+                return remaining, messages
             elif header == b'FAIL':
-                info_cb(FastbootMessage(remaining, header))
+                fbm = FastbootMessage(remaining, header)
+                messages.append(fbm)
+                info_cb(fbm)
                 raise FastbootRemoteFailure('FAIL: %s', remaining)
             else:
                 raise FastbootInvalidResponse(
@@ -188,6 +198,7 @@ class FastbootProtocol(object):
 
     def _Write(self, data, length, progress_callback=None):
         """Sends the data to the device, tracking progress with the callback."""
+        progress = None
         if progress_callback:
             progress = self._HandleProgress(length, progress_callback)
             next(progress)
@@ -310,20 +321,19 @@ class FastbootCommands(object):
         Returns:
           Response to a download request, normally nothing.
         """
+
         if isinstance(source_file, str):
+            source_file_path = str(source_file)
             source_len = os.stat(source_file).st_size
-            source_file = open(source_file)
+            with open(source_file_path, 'rb') as fh:
+                source_file = BytesIO(fh.read())
 
-        with source_file:
-            if source_len == 0:
-                # Fall back to storing it all in memory :(
-                data = source_file.read()
-                source_file = io.BytesIO(data.encode('utf8'))
-                source_len = len(data)
+        if not source_len:
+            source_len = len(source_file)
 
-            self._protocol.SendCommand(b'download', b'%08x' % source_len)
-            return self._protocol.HandleDataSending(
-                source_file, source_len, info_cb, progress_callback=progress_callback)
+        self._protocol.SendCommand(b'download', b'%08x' % source_len)
+        return self._protocol.HandleDataSending(
+            source_file, source_len, info_cb, progress_callback=progress_callback)
 
     def Flash(self, partition, timeout_ms=0, info_cb=DEFAULT_MESSAGE_CALLBACK):
         """Flashes the last downloaded file to the given partition.
@@ -396,3 +406,17 @@ class FastbootCommands(object):
     def RebootBootloader(self, timeout_ms=None):
         """Reboots into the bootloader, usually equiv to Reboot('bootloader')."""
         return self._SimpleCommand(b'reboot-bootloader', timeout_ms=timeout_ms)
+
+    def Boot(self, source_file):
+        """
+        Fastboot boot image by sending image from local file system then issuing the boot command
+
+        :param source_file:
+        :return:
+        """
+
+        if not os.path.exists(source_file):
+            raise ValueError("source_file must exist")
+
+        self.Download(source_file)
+        self._SimpleCommand(b'boot')

@@ -86,6 +86,9 @@ def main():
         subparsers, parents, fastboot.FastbootCommands.Oem)
     common_cli.MakeSubparser(
         subparsers, parents, fastboot.FastbootCommands.Reboot)
+    common_cli.MakeSubparser(
+        subparsers, parents, fastboot.FastbootCommands.Boot,
+        {'source_file': 'Image file on the host to push and boot'})
 
     if len(sys.argv) == 1:
         parser.print_help()
