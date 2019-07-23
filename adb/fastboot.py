@@ -328,11 +328,13 @@ class FastbootCommands(object):
             with open(source_file_path, 'rb') as fh:
                 source_file = BytesIO(fh.read())
 
-        elif isinstance(source_file, StringIO):
-            source_file = BytesIO(source_file.read())
-
         if not source_len:
-            source_len = len(source_file)
+            if isinstance(source_file, StringIO):
+                source_file.seek(0, os.SEEK_END)
+                source_len = source_file.tell()
+                source_file.seek(0)
+            else:
+                source_len = len(source_file)
 
         self._protocol.SendCommand(b'download', b'%08x' % source_len)
         return self._protocol.HandleDataSending(
