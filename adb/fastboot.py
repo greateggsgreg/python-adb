@@ -124,7 +124,7 @@ class FastbootProtocol(object):
           FastbootInvalidResponse: Fastboot responded with an unknown packet type.
 
         Returns:
-          Tuple - OKAY packet's message, List of preceding Fastboot Messages
+          tuple (OKAY packet's message, List of preceding Fastboot Messages)
         """
         accepted_size, _msgs = self._AcceptResponses(
             b'DATA', info_cb, timeout_ms=timeout_ms)
@@ -152,7 +152,7 @@ class FastbootProtocol(object):
           FastbootInvalidResponse: Fastboot responded with an unknown packet type.
 
         Returns:
-          Tuple - OKAY packet's message, List of preceding Fastboot Messages
+          tuple (OKAY packet's message, List of preceding Fastboot Messages)
         """
 
         messages = []
@@ -413,11 +413,13 @@ class FastbootCommands(object):
         return self._SimpleCommand(b'reboot-bootloader', timeout_ms=timeout_ms)
 
     def Boot(self, source_file):
-        """
-        Fastboot boot image by sending image from local file system then issuing the boot command
+        """Fastboot boot image by sending image from local file system then issuing the boot command
 
-        :param source_file:
-        :return:
+        Args:
+            source_file: String file path to the image to send and boot
+
+        Returns:
+            None
         """
 
         if not os.path.exists(source_file):
